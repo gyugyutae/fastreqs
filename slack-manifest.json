@@ -1,0 +1,41 @@
+{
+  "display_information": {
+    "name": "FastReqs",
+    "description": "대화에서 유저스토리 변경을 제안하고 승인 후 문서를 관리합니다.",
+    "background_color": "#244b73"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "FastReqs",
+      "always_online": false
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "chat:write",
+        "channels:history",
+        "groups:history",
+        "app_mentions:read",
+        "files:read",
+        "channels:read",
+        "groups:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "bot_events": [
+        "message.channels",
+        "message.groups",
+        "app_mention"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true
+    },
+    "socket_mode_enabled": true,
+    "org_deploy_enabled": false,
+    "token_rotation_enabled": false
+  }
+}
