@@ -72,7 +72,7 @@ uv venv && uv pip install -r requirements-dev.txt   # 최초 1회
 - 커밋은 사용자 git 신원으로만 한다. Claude/AI 표시(`Co-Authored-By`, "Generated with") 금지.
 - 사용자가 요청할 때만 커밋·푸시한다.
 - 저장소 소유 계정은 `gyugyutae`다. 이 컴퓨터의 gh 기본 활성 계정은 `gyutaetae`라서 쓰기 권한이 없다(push 403, unarchive 권한 오류). 푸시 전에 `gh api repos/gyugyutae/fastreqs --jq '{archived, push: .permissions.push}'`로 확인하고, push가 false면 `gh auth switch -u gyugyutae`로 바꿔 푸시한 뒤 `gh auth switch -u gyutaetae`로 되돌린다.
-- 저장소가 보관(archived) 상태면 푸시할 수 없다. 해제(`gh repo unarchive`)는 저장소 설정 변경이므로 사용자에게 먼저 묻는다. 제출 후 다시 보관할지도 사용자가 정한다.
+- 저장소는 보관(archive, 읽기 전용)하지 않고 일반 상태로 운영한다(2026-11-17 사용자 결정). 보관하지 않는다. 혹시 보관 상태로 바뀌어 있으면 사용자에게 알리고 해제 여부를 묻는다.
 
 ## 10. 사용자와 소통
 - 사용자에게는 한국어로 답한다.
