@@ -10,11 +10,10 @@
 import shutil
 import tempfile
 from pathlib import Path
-from types import SimpleNamespace
 
 from .analysis_service import RequirementAnalysisService
 from .config import ROOT
-from .controller import RequirementController
+from .controller import ControllerSettings, RequirementController
 from .document_repository import RequirementDocumentRepository
 from .documents import ADR, SPEC, USER_STORIES, read_documents
 from .models import Analysis, Candidate, Conflict
@@ -164,10 +163,11 @@ def replay():
         shutil.copytree(FIXTURE_FOLDER, folder)
         store = StateStore(root / 'state')
         store.bind(WORKSPACE_ID, CHANNEL_ID, folder)
-        config = SimpleNamespace(endings=('수고하셨습니다',))
+        settings = ControllerSettings(endings=('수고하셨습니다',),
+                                      bot_id='BOT')
         controller = RequirementController(
             store, ScriptedAnalyzer(), RequirementDocumentRepository(store),
-            SlackBot(_print_and_send([])), config, 'BOT')
+            SlackBot(_print_and_send([])), settings)
         _play_meeting_file(controller, store)
         _play_removal(controller, store)
         _play_conflict(controller, store)

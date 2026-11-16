@@ -14,15 +14,18 @@
     ApprovalProcessor 승인·거절·충돌 선택, 저장, 재시작 복구
 
 사용 예:
+    settings = ControllerSettings(endings=config.endings, bot_id=bot_id)
     controller = RequirementController(store, analyzer, repository, view,
-                                       config, bot_id)
+                                       settings)
     controller.collect_chat(workspace_id, slack_event)
 """
 
 from .analysis_runner import AnalysisRunner
 from .approval_processor import ApprovalProcessor
 from .chat_collector import ChatCollector
-from .controller_context import ControllerContext
+from .controller_context import ControllerContext, ControllerSettings
+
+__all__ = ['ControllerSettings', 'RequirementController']
 
 
 class RequirementController:
@@ -35,7 +38,7 @@ class RequirementController:
         processor: 결정 처리 부품.
     """
 
-    def __init__(self, store, analyzer, repository, view, config, bot_id):
+    def __init__(self, store, analyzer, repository, view, settings):
         """협력 객체를 주입받아 세 부품을 조립한다.
 
         Args:
@@ -43,11 +46,10 @@ class RequirementController:
             analyzer: 분석 서비스(RequirementAnalyzer).
             repository: 문서 리포지토리(RequirementDocumentRepository).
             view: 화면(RequirementView).
-            config: endings(종료 키워드)를 가진 설정.
-            bot_id: 멘션 판별에 쓰는 봇 사용자 ID.
+            settings: 종료 키워드와 봇 ID(ControllerSettings).
         """
         self.context = ControllerContext(store, analyzer, repository, view,
-                                         config, bot_id)
+                                         settings)
         self.runner = AnalysisRunner(self.context)
         self.processor = ApprovalProcessor(self.context,
                                            self.runner.create_candidate)

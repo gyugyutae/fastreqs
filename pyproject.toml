@@ -9,14 +9,20 @@ target-version = "py310"
 
 [tool.ruff.lint]
 # Google Python Style Guide 기준: pycodestyle(E/W), pyflakes(F),
-# 이름 규칙(N), docstring(D, google), 복잡도(C901), 매직 넘버(PLR2004).
-select = ["E", "W", "F", "N", "D", "C901", "PLR2004", "I"]
+# 이름 규칙(N), docstring(D, google), 복잡도(C901), 매직 넘버(PLR2004),
+# 긴 파라미터 리스트(PLR0913, 인자 5개 이하), 긴 함수(PLR0915).
+select = ["E", "W", "F", "N", "D", "C901", "PLR2004", "PLR0913", "PLR0915",
+          "I"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-statements = 50
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "PLR2004"]

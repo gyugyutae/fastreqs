@@ -200,7 +200,8 @@ class SlackBotTest(unittest.TestCase):
         _, text, options = self.sent[0]
         buttons = options['blocks'][-1]['elements']
         self.assertEqual('1', ts)
-        self.assertEqual(['c1:2', 'c1:2'], [b['value'] for b in buttons])
+        values = [button['value'] for button in buttons]
+        self.assertEqual(['c1:2', 'c1:2'], values)
         self.assertTrue(options['reply_broadcast'])
         self.assertIn('Story/PRD 공동 승인', text)
 

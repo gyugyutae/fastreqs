@@ -63,7 +63,7 @@ class ChatCollector:
 
     def _mentions_bot_with(self, text, keyword):
         """봇 멘션과 키워드가 함께 있는 명시 요청인지 돌려준다."""
-        return f'<@{self.context.bot_id}>' in text and keyword in text
+        return f'<@{self.context.settings.bot_id}>' in text and keyword in text
 
     def collect(self, workspace_id, event, download=None):
         """Slack 메시지 하나를 처리한다.
@@ -189,6 +189,6 @@ class ChatCollector:
                                     event['user'], text):
             return
         is_ending = (not source['content'] and any(
-            word in text for word in self.context.config.endings))
+            word in text for word in self.context.settings.endings))
         if self._mentions_bot_with(text, ANALYZE_KEYWORD) or is_ending:
             self.start_analysis(source['id'])

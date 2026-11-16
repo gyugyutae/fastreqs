@@ -30,7 +30,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from . import documents as doc
 from .analysis_service import RequirementAnalysisService
 from .approval_processor import is_final_decision
-from .controller import RequirementController
+from .controller import ControllerSettings, RequirementController
 from .document_repository import RequirementDocumentRepository
 from .llm_client import OpenRouterClient
 from .records import KEEP_NEW, KIND_CONFLICT, CandidateStatus, Decision
@@ -317,8 +317,9 @@ def build_controller(store, config, bot_id, send):
     bot = SlackBot(send)
     analyzer = RequirementAnalysisService(OpenRouterClient(config))
     repository = RequirementDocumentRepository(store)
+    settings = ControllerSettings(endings=config.endings, bot_id=bot_id)
     controller = RequirementController(store, analyzer, repository, bot,
-                                       config, bot_id)
+                                       settings)
     return controller, bot
 
 

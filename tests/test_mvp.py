@@ -5,12 +5,11 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastreqs import documents as doc
 from fastreqs.analysis_service import RequirementAnalysisService
-from fastreqs.controller import RequirementController
+from fastreqs.controller import ControllerSettings, RequirementController
 from fastreqs.document_repository import RequirementDocumentRepository
 from fastreqs.models import ADRChange, Analysis, Candidate, Conflict
 from fastreqs.records import KEEP_NEW, CandidateStatus, Decision
@@ -70,7 +69,8 @@ class FlowTestBase(unittest.TestCase):
         self.store = StateStore(self.root / 'state')
         self.store.bind('T1', 'C1', self.folder)
         self.sent = []
-        self.config = SimpleNamespace(endings=('수고하셨습니다',))
+        self.settings = ControllerSettings(endings=('수고하셨습니다',),
+                                           bot_id='BOT')
 
     def tearDown(self):
         self.store.close()
@@ -86,7 +86,7 @@ class FlowTestBase(unittest.TestCase):
         return RequirementController(
             self.store, ScriptedAnalyzer(analyses, conflicts),
             RequirementDocumentRepository(self.store), SlackBot(self.send),
-            self.config, 'BOT')
+            self.settings)
 
     def channel_source(self):
         """채널 입력 경로 레코드를 돌려준다."""

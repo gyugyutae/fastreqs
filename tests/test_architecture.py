@@ -42,6 +42,9 @@ DESIGN_TO_CODE = {
 CONTROLLER_LAYER = ('controller', 'controller_context', 'chat_collector',
                     'analysis_runner', 'approval_processor')
 FORBIDDEN_IN_CONTROLLER = ('slack_bot', 'slack_bolt', 'llm_client', 'httpx')
+STATUS_VALUES = {'pending', 'clarifying', 'conflicted', 'applying',
+                 'applied', 'rejected', 'replaced', 'stale', 'apply_failed'}
+MAX_MODULE_LINES = 450
 STATUS_PHRASES = re.compile(
     r'테스트\s*\d+\s*개|테스트 결과는 없다|구현 재개 요청 전까지 보류'
     r'|미검증 보류|충돌 답변')
@@ -173,6 +176,60 @@ class SingleResponsibilityLocationTest(unittest.TestCase):
     def test_documents_written_only_through_repository(self):
         self.assertEqual({'document_repository.py'},
                          files_calling('atomic_write'))
+
+
+class CodeSmellTest(unittest.TestCase):
+    """리팩토링으로 없앤 코드 스멜이 다시 생기지 않게 한다."""
+
+    def test_no_large_module(self):
+        # ② 큰 클래스: 모듈이 커지면 책임을 나눈다.
+        large = [path.name for path in source_files()
+                 if len(path.read_text(encoding='utf-8').splitlines())
+                 > MAX_MODULE_LINES]
+        self.assertFalse(large, f'{MAX_MODULE_LINES}줄 초과 모듈: {large}')
+
+    def test_status_compared_as_enum(self):
+        # ⑤ 기본 타입 선호: 상태는 CandidateStatus로만 비교한다.
+        offenders = []
+        for path in source_files():
+            if path.name == 'records.py':
+                continue
+            tree = ast.parse(path.read_text(encoding='utf-8'))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Compare):
+                    continue
+                values = [node.left, *node.comparators]
+                if any(isinstance(value, ast.Constant)
+                       and value.value in STATUS_VALUES for value in values):
+                    offenders.append(f'{path.name}:{node.lineno}')
+        self.assertFalse(offenders, f'문자열 상태 비교: {offenders}')
+
+    def test_no_single_letter_names(self):
+        # 이름 규칙: 한 글자 변수 금지(쓰지 않는 값의 _ 제외).
+        offenders = []
+        for path in [*source_files(), *(ROOT / 'tests').glob('*.py'),
+                     *(ROOT / 'scripts').glob('*.py')]:
+            tree = ast.parse(path.read_text(encoding='utf-8'))
+            for node in ast.walk(tree):
+                if (isinstance(node, ast.Name)
+                        and isinstance(node.ctx, ast.Store)
+                        and len(node.id) == 1 and node.id != '_'):
+                    offenders.append(f'{path.name}:{node.lineno} {node.id}')
+                if isinstance(node, ast.arg) and len(node.arg) == 1 \
+                        and node.arg != '_':
+                    offenders.append(f'{path.name}:{node.lineno} {node.arg}')
+        self.assertFalse(offenders, f'한 글자 이름: {offenders}')
+
+    def test_view_does_not_touch_state(self):
+        # ⑪ 다른 클래스 지나치게 애용: SlackBot은 저장소를 직접 쓰지 않는다.
+        tree = ast.parse((PACKAGE / 'slack_bot.py').read_text(
+            encoding='utf-8'))
+        slack_bot = next(node for node in tree.body
+                         if isinstance(node, ast.ClassDef)
+                         and node.name == 'SlackBot')
+        names = {node.attr for node in ast.walk(slack_bot)
+                 if isinstance(node, ast.Attribute)}
+        self.assertFalse(names & {'store', 'repository', 'analyzer'})
 
 
 class DependencyDirectionTest(unittest.TestCase):

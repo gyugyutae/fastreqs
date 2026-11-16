@@ -61,10 +61,11 @@ def atomic_write(path, content):
     descriptor, temp_name = tempfile.mkstemp(
         prefix='.' + path.name, dir=path.parent)
     try:
-        with os.fdopen(descriptor, 'w', encoding='utf-8', newline='') as f:
-            f.write(content)
-            f.flush()
-            os.fsync(f.fileno())
+        with os.fdopen(descriptor, 'w', encoding='utf-8',
+                       newline='') as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
         os.replace(temp_name, path)
     finally:
         if os.path.exists(temp_name):

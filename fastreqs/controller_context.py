@@ -6,9 +6,23 @@ RequirementController는 ChatCollector, AnalysisRunner, ApprovalProcessor로
 """
 
 import threading
+from dataclasses import dataclass
 
 from . import documents as doc
 from .records import CandidateStatus
+
+
+@dataclass(frozen=True)
+class ControllerSettings:
+    """컨트롤러 동작 설정.
+
+    Attributes:
+        endings: 분석을 시작하는 종료 키워드 목록.
+        bot_id: 멘션 판별에 쓰는 봇 사용자 ID.
+    """
+
+    endings: tuple
+    bot_id: str
 
 
 class ControllerContext:
@@ -19,18 +33,16 @@ class ControllerContext:
         analyzer: 후보 추출·충돌 검사(RequirementAnalyzer).
         repository: 요구사항 문서 읽기·저장(RequirementDocumentRepository).
         view: 사용자 화면(RequirementView).
-        config: endings(종료 키워드)를 가진 설정.
-        bot_id: 멘션 판별에 쓰는 봇 사용자 ID.
+        settings: 종료 키워드와 봇 ID(ControllerSettings).
     """
 
-    def __init__(self, store, analyzer, repository, view, config, bot_id):
+    def __init__(self, store, analyzer, repository, view, settings):
         """협력 객체를 주입받는다."""
         self.store = store
         self.analyzer = analyzer
         self.repository = repository
         self.view = view
-        self.config = config
-        self.bot_id = bot_id
+        self.settings = settings
         self._guard = threading.RLock()
         self._binding_locks = {}
 
