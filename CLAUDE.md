@@ -61,16 +61,21 @@
 - 새 기능·버그 수정에는 실패를 잡는 테스트를 함께 넣는다. 테스트를 추가·삭제하면 `docs/mvp-status.md`의 테스트 수를 고친다(테스트가 검사한다).
 
 ## 8. 검사 (변경 후 모두 통과해야 완료)
+- CI(`.github/workflows/ci.yml`)가 main 푸시(그리고 PR)마다 Ubuntu Python 3.10·3.13과 Windows Python 3.13으로 아래 세 검사를 돌린다. CI가 빨간색이면 완료가 아니다. 검사를 끄거나 매트릭스를 줄여서 통과시키지 않는다.
+- Windows에서도 돌아가야 한다. 파일을 읽고 쓸 때는 항상 `encoding='utf-8'`을 지정한다(Windows 기본 인코딩은 UTF-8이 아니다).
+- 구조·이름·설계 문서가 바뀌는 변경을 마치면 커밋 전에 `design-reviewer` 서브에이전트(`.claude/agents/design-reviewer.md`)로 검토하고, 지적을 고치거나 고치지 않는 이유를 결과 보고에 적는다. 6절의 "리뷰" 규칙(④ ⑩ O I)은 이 검토로 확인한다.
 ```sh
 uv venv && uv pip install -r requirements-dev.txt   # 최초 1회
 .venv/bin/python -m pytest -q                       # 아키텍처 규칙 + 기능 테스트
 .venv/bin/ruff check fastreqs scripts tests
 .venv/bin/python -m fastreqs replay                 # 오프라인 모의 데모
 ```
+Windows에서는 `.venv/bin/`을 `.venv\Scripts\`로 바꿔 실행한다.
 
 ## 9. 커밋·푸시
 - 커밋은 사용자 git 신원으로만 한다. Claude/AI 표시(`Co-Authored-By`, "Generated with") 금지.
 - 사용자가 요청할 때만 커밋·푸시한다.
+- 작업 브랜치는 main 하나를 쓰고 main에 바로 푸시한다(브랜치 보호 없음, 2026-11-17 사용자 결정). 그래서 CI는 푸시를 막지 않고 푸시 뒤에 결과를 낸다. 푸시 전에 8절 검사를 로컬에서 모두 통과시키고, 푸시 후 `gh run list -R gyugyutae/fastreqs -L 1`로 CI 결과를 확인한다. 실패하면 바로 고쳐 다시 푸시하고 사용자에게 알린다.
 - 저장소 소유 계정은 `gyugyutae`다. 이 컴퓨터의 gh 기본 활성 계정은 `gyutaetae`라서 쓰기 권한이 없다(push 403, unarchive 권한 오류). 푸시 전에 `gh api repos/gyugyutae/fastreqs --jq '{archived, push: .permissions.push}'`로 확인하고, push가 false면 `gh auth switch -u gyugyutae`로 바꿔 푸시한 뒤 `gh auth switch -u gyutaetae`로 되돌린다.
 - 저장소는 보관(archive, 읽기 전용)하지 않고 일반 상태로 운영한다(2026-11-17 사용자 결정). 보관하지 않는다. 혹시 보관 상태로 바뀌어 있으면 사용자에게 알리고 해제 여부를 묻는다.
 

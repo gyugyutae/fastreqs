@@ -126,7 +126,7 @@ def _play_meeting_file(controller, store):
     upload = {'channel': CHANNEL_ID, 'user': 'U1', 'ts': 'upload',
               'files': [{'id': 'F1', 'name': 'meeting.md', 'size': 100}]}
     controller.collect_chat(WORKSPACE_ID, upload,
-                            lambda _: MEETING_FILE.read_text())
+                            lambda _: MEETING_FILE.read_text(encoding='utf-8'))
     _chat(controller, 'request', '<@BOT> 분석해줘', thread_ts='upload')
     question = store.find_candidates()[0]
     _chat(controller, 'answer', MONTHLY_REPORT_WHY + '입니다.',

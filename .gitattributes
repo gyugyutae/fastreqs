@@ -1,0 +1,8 @@
+# 텍스트 파일은 어느 OS에서 받아도 LF로 체크아웃한다(Windows CI·문서 비교 일관성).
+* text=auto eol=lf
+*.png binary
+*.pptx binary
+*.hwp binary
+*.hwpx binary
+*.pdf binary
+*.mp4 binary

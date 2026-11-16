@@ -14,17 +14,14 @@
 
 ## 02-설계
 
-**기준 설계는 [design.md](02-설계/design.md)다.** 이름 규칙, 클래스 목록, 클래스·시퀀스 다이어그램(UC-01·02·03)이 모두 여기 있다. 아래 pptx/hwp는 그 전 단계의 이력 자료이며 내용이 다르면 design.md를 따른다.
+**기준 설계는 [design.md](02-설계/design.md)다.** 이름 규칙, 클래스 목록, 클래스·시퀀스 다이어그램(UC-01·02·03)이 모두 여기 있다. 내용이 크게 달라진 이전 설계 파일(UC_design.pptx, 클래스목록_시퀀스.pptx, 클래스 다이어그램 hwp)은 지웠다. 필요하면 git 기록(커밋 2e049c8)에서 꺼낼 수 있다. 이름에 (이전)이 붙은 파일은 대부분 유효하지만 일부가 design.md와 다르며, 다르면 design.md를 따른다.
 
 | 파일 | 내용 |
 |---|---|
 | [design.md](02-설계/design.md) | 통합 설계(기준): 이름 규칙, 클래스 목록, Mermaid 다이어그램 원본 |
 | [FastReqs_클래스다이어그램.png](02-설계/FastReqs_클래스다이어그램.png) | 클래스 다이어그램(design.md 렌더링) |
 | [FastReqs_시퀀스_UC-01.png](02-설계/FastReqs_시퀀스_UC-01.png) · [UC-02](02-설계/FastReqs_시퀀스_UC-02.png) · [UC-03](02-설계/FastReqs_시퀀스_UC-03.png) | 시퀀스 다이어그램(design.md 렌더링) |
-| [UC_design.pptx](02-설계/UC_design.pptx) | (이력) 유스케이스별 시퀀스 다이어그램·클래스 식별, 한국어 오퍼레이션 |
-| [클래스목록_시퀀스.pptx](02-설계/클래스목록_시퀀스.pptx) | (이력) 클래스 목록과 시퀀스, 영문 오퍼레이션 |
-| [3조 FastReqs 클래스 다이어그램.hwp](02-설계/3조%20FastReqs%20클래스%20다이어그램.hwp) | (이력) 클래스 다이어그램 보고서 |
-| [FastReqs_UI설계.hwpx](02-설계/FastReqs_UI설계.hwpx) / [pdf](02-설계/FastReqs_UI설계.pdf) | 실습 na-1 UI 설계: UC-01 요구사항 추가, UC-02 요구사항 제외 화면 스케치 |
+| [FastReqs_UI설계(이전).hwpx](<02-설계/FastReqs_UI설계(이전).hwpx>) / [pdf](<02-설계/FastReqs_UI설계(이전).pdf>) | (이전) 실습 na-1 UI 설계: UC-01·UC-02 화면 스케치. 화면 흐름은 유효. 다른 점: 오퍼레이션이 한국어 이름(현재는 design.md의 영문 이름), 화면 1-7 충돌은 "알리고 종료"(현재는 선택 질문으로 하나만 남김), /conflict 명령(현재는 @FastReqs 충돌 확인) |
 
 ## final (요구·동작·저장 설계)
 

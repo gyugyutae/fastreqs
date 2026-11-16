@@ -1,0 +1,55 @@
+# FastReqs CI: 코딩 표준(ruff), 테스트(기능 + 규칙 강제 아키텍처 테스트), 오프라인 모의 데모.
+# 규칙은 CLAUDE.md, 검사 기준은 pyproject.toml과 tests/test_architecture.py에 있다.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 최소 지원 버전(README: Python 3.10 이상)
+          - os: ubuntu-latest
+            python: '3.10'
+          - os: ubuntu-latest
+            python: '3.13'
+          # 실제 실행 환경(Windows 노트북)
+          - os: windows-latest
+            python: '3.13'
+    env:
+      # 한국어 출력이 Windows 콘솔 인코딩에서 깨지지 않게 표준 출력만 UTF-8로 둔다.
+      # 파일 읽기·쓰기는 코드에서 encoding='utf-8'을 직접 지정해야 한다(PYTHONUTF8은 켜지 않음).
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install
+        run: python -m pip install -r requirements-dev.txt
+      - name: Coding standard (ruff)
+        run: ruff check fastreqs scripts tests
+      - name: Tests (features + architecture rules)
+        run: python -m pytest -q
+      - name: Offline replay demo
+        run: python -m fastreqs replay

@@ -84,6 +84,37 @@ class DocumentsTest(unittest.TestCase):
             doc.validate_documents(broken)
 
 
+class CrlfDocumentTest(unittest.TestCase):
+    """Windows 편집기가 저장한 CRLF 문서."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.folder = Path(self.temp.name)
+        for name in doc.DOCUMENT_NAMES:
+            text = (FIXTURE / name).read_text(encoding='utf-8')
+            (self.folder / name).write_bytes(
+                text.replace('\n', '\r\n').encode('utf-8'))
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_crlf_documents_validate(self):
+        documents = doc.read_documents(self.folder)
+        self.assertNotIn('\r', documents[doc.PRD])
+
+    def test_write_keeps_crlf(self):
+        path = self.folder / doc.PRD
+        doc.atomic_write(path, '# 제목\n본문\n')
+        self.assertEqual(b'# \xec\xa0\x9c\xeb\xaa\xa9\r\n'
+                         b'\xeb\xb3\xb8\xeb\xac\xb8\r\n',
+                         path.read_bytes())
+
+    def test_new_file_uses_lf(self):
+        path = self.folder / 'new.md'
+        doc.atomic_write(path, 'a\nb\n')
+        self.assertEqual(b'a\nb\n', path.read_bytes())
+
+
 class StateStoreTest(unittest.TestCase):
     """StateStore의 ID 예약과 이벤트 저장."""
 

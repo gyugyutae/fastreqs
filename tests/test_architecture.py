@@ -12,6 +12,7 @@ CLAUDE.md의 규칙을 사람이 기억하지 않아도 지켜지도록, 어기�
 
 import ast
 import importlib
+import os
 import re
 import shutil
 import subprocess
@@ -285,11 +286,14 @@ class CodingStandardTest(unittest.TestCase):
     def test_ruff_passes(self):
         ruff = shutil.which('ruff') or shutil.which(
             'ruff', path=str(ROOT / '.venv' / 'bin'))
+        if not ruff and os.environ.get('CI'):
+            self.fail('CI에는 ruff가 설치되어 있어야 합니다.')
         if not ruff:
             self.skipTest('ruff 미설치: pip install -r requirements-dev.txt')
         result = subprocess.run(
             [ruff, 'check', 'fastreqs', 'scripts', 'tests'], cwd=ROOT,
-            capture_output=True, text=True, check=False)
+            capture_output=True, text=True, encoding='utf-8',
+            check=False)
         self.assertEqual(0, result.returncode, result.stdout)
 
 

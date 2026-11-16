@@ -149,7 +149,9 @@ class RequirementFlowTest(FlowTestBase):
         controller = self.make_controller()
         record = self.propose(controller, make_candidate())
         prd = self.folder / doc.PRD
-        prd.write_text(prd.read_text() + '\n수동 메모\n')
+        original = prd.read_text(encoding='utf-8')
+        prd.write_text(original + '\n수동 메모\n', encoding='utf-8',
+                       newline='')
         result = controller.on_approved(self.decision(record))
         self.assertIn('다시 승인', result)
         self.assertNotIn('US-004', self.read()[doc.USER_STORIES])

@@ -26,6 +26,7 @@ KIND_STORY = 'story'
 KIND_SPEC = 'spec'
 KIND_ADR = 'adr'
 
+CRLF = b'\r\n'
 ADR_ACCEPTED = '- 상태: Accepted'
 ADR_SUPERSEDED = '- 상태: Superseded'
 DEFAULT_PRIORITY = '보통'
@@ -50,14 +51,24 @@ def compute_digest(content):
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
 
+def uses_crlf(path):
+    """기존 파일이 Windows 줄바꿈(CRLF)을 쓰는지 돌려준다."""
+    path = Path(path)
+    return path.exists() and CRLF in path.read_bytes()
+
+
 def atomic_write(path, content):
     """같은 폴더의 임시 파일을 거쳐 파일을 원자적으로 교체한다.
 
+    기존 파일이 CRLF 줄바꿈이면 CRLF로 저장해 사용자의 줄바꿈을 지킨다.
+
     Args:
         path: 저장할 파일 경로.
-        content: 저장할 UTF-8 문자열.
+        content: 저장할 UTF-8 문자열(줄바꿈은 LF).
     """
     path = Path(path)
+    if uses_crlf(path):
+        content = content.replace('\n', '\r\n')
     descriptor, temp_name = tempfile.mkstemp(
         prefix='.' + path.name, dir=path.parent)
     try:
@@ -73,8 +84,12 @@ def atomic_write(path, content):
 
 
 def read_text(path):
-    """파일을 UTF-8 문자열로 읽는다(줄바꿈 변환 없음)."""
-    return Path(path).read_bytes().decode('utf-8')
+    """파일을 UTF-8 문자열로 읽는다. 줄바꿈은 LF로 맞춘다.
+
+    Windows 편집기가 저장한 CRLF 문서도 같은 규칙으로 검사·비교하기 위해서다.
+    """
+    text = Path(path).read_bytes().decode('utf-8')
+    return text.replace('\r\n', '\n')
 
 
 def read_documents(folder, validate_structure=True):
