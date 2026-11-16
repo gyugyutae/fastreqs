@@ -6,7 +6,7 @@ CLAUDE.md의 규칙을 사람이 기억하지 않아도 지켜지도록, 어기�
 - 충돌 검사, 화면 표시, 문서 쓰기는 각각 한 곳에만 있다.
 - 컨트롤러 계층은 Slack·HTTP 구체 모듈을 import하지 않는다(DIP).
 - 모든 코드 모듈은 code-architecture.md에 적혀 있다.
-- 구현 상태(테스트 수 등)는 mvp-status.md에만 있고 실제 수와 같다.
+- 옛 상태 문구·금지 용어·테스트 개수를 문서에 적지 않는다.
 - ruff 코딩 표준 위반이 0건이다.
 """
 
@@ -260,24 +260,15 @@ class DocumentConsistencyTest(unittest.TestCase):
                    if path.name != '__init__.py' and path.name not in text]
         self.assertFalse(missing, f'code-architecture에 없는 모듈: {missing}')
 
-    def test_status_written_only_in_mvp_status(self):
+    def test_banned_phrases_absent(self):
+        # 옛 상태 문구(보류·테스트 결과 없음), 금지 용어(충돌 답변),
+        # 테스트 개수 같은 변하는 숫자를 어느 문서에도 쓰지 않는다.
         documents = [*(DOCS / 'final').glob('*.md'), DOCS / 'README.md',
-                     DOCS / 'demo-script-3min.md', ROOT / 'README.md',
-                     DESIGN]
+                     ROOT / 'README.md', DESIGN, STATUS]
         offenders = [path.name for path in documents
                      if STATUS_PHRASES.search(
                          path.read_text(encoding='utf-8'))]
         self.assertFalse(offenders, f'상태·용어 규칙 위반 문서: {offenders}')
-
-    def test_mvp_status_test_count_is_real(self):
-        count = sum(
-            len(re.findall(r'^    def test_', path.read_text(encoding='utf-8'),
-                           re.M))
-            for path in (ROOT / 'tests').glob('test_*.py'))
-        match = re.search(r'자동 테스트 (\d+)개',
-                          STATUS.read_text(encoding='utf-8'))
-        self.assertIsNotNone(match)
-        self.assertEqual(count, int(match[1]))
 
 
 class CodingStandardTest(unittest.TestCase):
