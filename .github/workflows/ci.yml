@@ -37,8 +37,8 @@ jobs:
       # 파일 읽기·쓰기는 코드에서 encoding='utf-8'을 직접 지정해야 한다(PYTHONUTF8은 켜지 않음).
       PYTHONIOENCODING: utf-8
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
