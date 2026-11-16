@@ -1,0 +1,22 @@
+[project]
+name = "fastreqs"
+version = "0.2.0"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 80
+target-version = "py310"
+
+[tool.ruff.lint]
+# Google Python Style Guide 기준: pycodestyle(E/W), pyflakes(F),
+# 이름 규칙(N), docstring(D, google), 복잡도(C901), 매직 넘버(PLR2004).
+select = ["E", "W", "F", "N", "D", "C901", "PLR2004", "I"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "PLR2004"]
