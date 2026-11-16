@@ -41,6 +41,12 @@ uv venv && uv pip install -r requirements-dev.txt   # 최초 1회
 .venv/bin/python -m fastreqs replay                 # 오프라인 모의 데모
 ```
 
-## 7. 커밋
+## 7. 커밋·푸시
 - 커밋은 사용자 git 신원으로만 한다. Claude/AI 표시(`Co-Authored-By`, "Generated with") 금지.
 - 사용자가 요청할 때만 커밋·푸시한다.
+- 저장소 소유 계정은 `gyugyutae`다. 이 컴퓨터의 gh 기본 활성 계정은 `gyutaetae`라서 쓰기 권한이 없다(push 403, unarchive 권한 오류). 푸시 전에 `gh api repos/gyugyutae/fastreqs --jq '{archived, push: .permissions.push}'`로 확인하고, push가 false면 `gh auth switch -u gyugyutae`로 바꿔 푸시한 뒤 `gh auth switch -u gyutaetae`로 되돌린다.
+- 저장소가 보관(archived) 상태면 푸시할 수 없다. 해제(`gh repo unarchive`)는 저장소 설정 변경이므로 사용자에게 먼저 묻는다. 제출 후 다시 보관할지도 사용자가 정한다.
+
+## 8. 사용자와 소통
+- 사용자에게는 한국어로 답한다.
+- 이 저장소의 과제 산출물(보고서)은 Markdown(`docs/04-리팩토링/`)이 원본이다. HWP 양식이 필요하면 macOS에서는 HWP 바이너리를 쓸 수 없으므로 HWPX로 만든다.
