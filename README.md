@@ -1,7 +1,8 @@
 # FastReqs MVP
 
 Windows 노트북에서 실행하는 승인 기반 Slack 요구사항 관리 데모.
-대화/.md 회의록 → Who/What/Why 보완 → 후보별 Story/PRD 공동 승인 → Spec/ADR 별도 승인.
+대화/.md 회의록 → Who/What/Why 보완 → 충돌 검사 → 후보별 Story/PRD 공동 승인 → Spec/ADR 별도 승인.
+충돌하는 요구사항은 선택 질문으로 하나만 남긴다. `@FastReqs 충돌 확인`으로 문서 전체 충돌도 확인한다.
 
 ## Windows 시작
 
@@ -21,6 +22,7 @@ Windows 노트북에서 실행하는 승인 기반 Slack 요구사항 관리 데
 - Story/PRD 전후를 확인하고 승인. 노트북의 `demo-documents` 파일 변경 확인.
 - 두 사람 대화로 다크 모드 US-002 제외 결정 → `수고하셨습니다` → 삭제 후보 승인. 이어 Spec 삭제 별도 승인.
 - 무관한 ADR/제품 배경은 유지된다. 일반 채널 재분석은 파일 미결을 섞지 않는다.
+- 충돌: 새 요구가 기존 Story와 동시에 성립할 수 없으면 승인 카드 대신 'US-xxx 유지 / 새 요구사항 채택' 버튼이 나온다. 채널에서 `@FastReqs 충돌 확인`을 보내면 기존 Story끼리 충돌을 찾는다.
 - 기술 변경이 미결/거절이면 기존 문서를 유지하고 봇 제안/`status`에 **갱신 검토 필요** 표시. 승인하지 않은 상태 표시만으로 문서를 수정하지 않는다.
 
 전체 약 3분 대본: [demo-script-3min.md](docs/demo-script-3min.md).
@@ -42,8 +44,9 @@ Markdown 네 파일이 기준이다. 샘플 템플릿의 기본 섹션/US/ADR ID
 
 ## 현재 검증 범위
 
-자동 테스트 및 오프라인 모의 흐름 검증. 실제 Slack 권한/첨부·무료 모델 품질/지연·Windows 네이티브 실행은 **리허설에서 검증 필요**. 무료 모델 자동 유료 전환 없음.
+구현·검증 상태는 [docs/mvp-status.md](docs/mvp-status.md) 한 곳에 적는다. 무료 모델 자동 유료 전환 없음.
 첨부 다운로드는 토큰 유출 방지를 위해 다른 호스트/리다이렉트를 따라가지 않는다. Slack 파일 전달이 리다이렉트를 요구하면 명시적으로 다운로드 실패가 표시되며 리허설에서 확인한다.
 
-설계: [docs/final/prd.md](docs/final/prd.md). 개발 테스트: `python -m unittest discover -s tests -v`.
+설계: [docs/02-설계/design.md](docs/02-설계/design.md)(클래스·시퀀스), [docs/final/prd.md](docs/final/prd.md)(범위). 리팩토링 결과: [docs/04-리팩토링/리팩토링보고서.md](docs/04-리팩토링/리팩토링보고서.md).
+개발 테스트: `python -m unittest discover -s tests -v`. 코딩 표준 검사: `ruff check fastreqs scripts tests`.
 SDK 연결은 [Slack Bolt 이벤트](https://docs.slack.dev/tools/bolt-python/concepts/event-listening/)·[버튼 ack](https://docs.slack.dev/tools/bolt-python/concepts/actions/), 모델 출력은 [OpenRouter Structured Outputs](https://openrouter.ai/docs/guides/features/structured-outputs)를 따른다.

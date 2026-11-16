@@ -1,5 +1,7 @@
 # UC-01 요구사항 추가 — 클래스 목록
 
+> 2026-11-16 갱신. UC-01·02·03을 합친 전체 클래스 목록과 다이어그램은 [docs/02-설계/design.md](../docs/02-설계/design.md)에 있다. 오퍼레이션 이름은 영문 camelCase로 통일했고, 코드 메서드는 같은 이름의 snake_case다.
+
 ## 작성 근거와 범위
 사용자가 작성한 UC-01-sequence-starter.drawio의 최종 Page-2와 UC-01-sequence-starter-Page-2.drawio.png를 기준으로 작성했다. 앱 구현을 그대로 역설계한 목록이 아니라, 유스케이스 1의 시퀀스에서 도출한 설계 클래스 목록이다. 코드와 원본 다이어그램은 변경하지 않는다.
 
@@ -11,26 +13,26 @@
 5. 클래스별 책임을 한 문장으로 설명하고, 메시지와 책임이 일치하는지 확인한다.
 
 ## 시퀀스에서 직접 도출한 클래스 4개
-| 클래스                                           | 책임                                      | 주요 오퍼레이션                                                             | 속성 후보·설계 제안                                |
-| --------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------ |
-| 슬랙봇 (SlackBot)                                | Slack 이벤트를 전달하고 제안·충돌·완료를 사용자에게 표시      | 대화전송(채널ID, 내용), 추가제안(후보ID, 내용, 대상문서), 충돌알림(후보ID, 충돌내용), 추가완료알림(후보ID) | 컨트롤러 참조                                    |
-| 요구사항 컨트롤러 (RequirementController)             | 대화 수집부터 분석·제안·승인·저장까지 유스케이스의 진행을 조정     | 대화수집(채널ID, 내용), 분석시작(채널ID, 시작조건), 승인처리(후보ID, 사용자ID)                  | 수집대화, 승인대기후보, 분석서비스 참조, 문서리포지토리 참조, 슬랙봇 참조 |
-| 요구사항 분석서비스 (RequirementAnalysisService)       | 새 대화에서 요구사항 후보를 추출하고 기존 요구사항과 의미 충돌을 검사 | 요구사항추출(새대화), 충돌검사(후보, 기존요구사항)                                        | LLM 클라이언트 참조(내부 구현 제안)                     |
-| 요구사항 문서 리포지토리 (RequirementDocumentRepository) | 채널에 연결된 로컬 문서의 기존 요구사항 조회와 승인된 내용 저장    | 기존요구사항조회(채널ID), 요구사항추가(후보ID, 내용)                                     | 채널별 문서경로 매핑                                |
+| 클래스 | 책임 | 주요 오퍼레이션 | 코드 |
+| --- | --- | --- | --- |
+| 슬랙봇 (SlackBot) | Slack 이벤트를 전달하고 제안·충돌 선택·완료를 사용자에게 표시 | sendChat(channelId, content), approve(candidateId), reject(candidateId), select(conflictId, keepId), proposeChange(candidate), askConflictChoice(candidate), showAdded(candidate), showRemoved(requirementId) | slack_bot.py::SlackBot |
+| 요구사항 컨트롤러 (RequirementController) | 대화 수집부터 분석·충돌 검사·제안·결정·저장까지 유스케이스의 진행을 조정 | collectChat(channelId, content), startAnalysis(channelId, trigger), onApproved(candidateId, userId), onRejected(candidateId, userId), onSelected(conflictId, keepId, userId) | controller.py::RequirementController |
+| 요구사항 분석서비스 (RequirementAnalysisService) | 새 대화에서 요구사항 후보를 추출하고 기존 요구사항과 의미 충돌을 검사(충돌 검사의 유일한 위치) | extractRequirements(newChat), checkConflicts(existing, candidate) | analysis_service.py::RequirementAnalysisService |
+| 요구사항 문서 리포지토리 (RequirementDocumentRepository) | 채널에 연결된 로컬 문서의 기존 요구사항 조회와 승인된 변경 저장 | findRequirements(channelId), exists(channelId, requirementId), save(channelId, change) | document_repository.py::RequirementDocumentRepository |
 
-오퍼레이션은 최종 그림의 수신 메시지에 맞췄다. ‘추가완료알림’에는 후보ID를 설계상 보충했다. 속성은 그림만으로 확정할 수 없으므로 후보로 표시한다.
+오퍼레이션은 그림의 수신 메시지에 맞췄다. 이전 한국어 이름과의 대응: 대화전송→sendChat, 대화수집→collectChat, 분석시작→startAnalysis, 요구사항추출→extractRequirements, 기존요구사항조회→findRequirements, 충돌검사→checkConflicts, 추가제안→proposeChange, 충돌알림→askConflictChoice(알림 후 종료 대신 선택 질문), 추가승인→approve, 승인처리→onApproved, 요구사항추가→save, 추가완료알림→showAdded(candidate). 속성은 그림만으로 확정할 수 없으므로 후보로 표시한다.
 
 ## 주요 반환값
-- 요구사항추출 → 요구사항 후보(후보ID, 내용)
-- 기존요구사항조회 → 기존 요구사항 목록
-- 충돌검사 → 충돌 여부와 충돌 내용
-- 요구사항추가 → 저장 결과
+- extractRequirements → 요구사항 후보(Candidate 목록)
+- findRequirements → 기존 요구사항 문서
+- checkConflicts → Conflict 목록(비어 있으면 충돌 없음)
+- save → 저장 결과(실패 시 SaveFailedError)
 
 ## 클래스 간 협력
 - 슬랙봇 → 컨트롤러: 대화 수집, 분석 시작, 승인 전달
 - 컨트롤러 → 분석서비스: 후보 추출, 충돌 검사
 - 컨트롤러 → 리포지토리: 문서 조회, 요구사항 추가
-- 컨트롤러 → 슬랙봇: 제안, 충돌 알림, 완료 알림
+- 컨트롤러 → 슬랙봇: 제안, 충돌 선택 질문, 완료 알림
 이 관계는 호출 의존성이다. 상속·합성 관계나 다중성은 이 시퀀스만으로 확정하지 않는다.
 
 ## 필요할 때 확장할 데이터 클래스

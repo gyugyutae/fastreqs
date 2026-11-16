@@ -1,6 +1,6 @@
 # 데이터 스키마
 
-구현용 설계안. Markdown이 기준 자료이며 아래 DB 테이블은 대화·작업·이력만 관리한다. DB에서 문서 전체를 생성하지 않는다. 동작은 [flow](flow.md), 이유는 [ADR](adr.md).
+저장 계약. 구현 상태는 [mvp-status](../mvp-status.md) 한 곳에만 적는다. Markdown이 기준 자료이며 아래 DB 테이블은 대화·작업·이력만 관리한다. DB에서 문서 전체를 생성하지 않는다. 동작은 [flow](flow.md), 이유는 [ADR](adr.md).
 
 ## 문서 계약
 채널마다 사용자가 지정한 서로 다른 폴더에 prd.md/user-stories.md/spec.md/adr.md를 둔다. UTF-8 및 고정 기본 섹션을 검증한다.
@@ -11,33 +11,35 @@
 문서 버전은 원본 파일 바이트의 SHA-256이다. 항목 버전은 정규화한 해당 항목 내용의 해시다. 삭제된 ID도 내부 예약 목록에 남긴다. 무관 섹션은 그대로 보존한다.
 
 ## 공통 타입
-내부 ID는 UUID, 시간은 UTC ISO-8601, Slack ts는 문자열(부동소수점 변환 금지). *_json은 검증된 구조화 JSON이다. workspace_id+channel_id가 모든 사용자 자료의 격리 경계다. 키/토큰은 DB 및 분석 로그에 저장하지 않는다.
+내부 ID는 UUID hex, 시간은 UTC ISO-8601, Slack ts는 문자열(부동소수점 변환 금지). records.data는 검증된 JSON이다. workspace/channel 연결 ID가 모든 사용자 자료의 격리 경계다. 키/토큰은 DB 및 분석 로그에 저장하지 않는다.
 
-## 논리 테이블
-| 테이블 | 주요 필드 | 제약·용도 |
+## 실제 저장 방식
+SQLite 테이블은 `records(kind, id, data)` 하나다. `data`는 JSON이고 `kind`가 논리 테이블 역할을 한다. 별도 SQL 테이블로 나누지 않은 이유는 MVP 규모에서 스키마 변경 비용을 줄이기 위해서다(코드: `store.py`).
+
+| kind | 주요 필드 | 제약·용도 |
 |---|---|---|
-| channel_bindings | id, workspace_id, channel_id, folder_path, created_at | UNIQUE(workspace_id,channel_id), 정규화한 폴더 중복 연결 금지 |
-| input_sources | id, binding_id, kind(channel/file), thread_ts?, file_id?, content_hash?, content_path?, analyzed_seq, followup_requested | 채널 경로 하나, 파일은 UNIQUE(binding_id,content_hash); 내용이 달라지면 새 경로 |
-| events | id, source_id, event_key, seq, message_ts, thread_ts?, user_id, text, received_at | event_key 유일, source 내 seq 증가; bot/system 제외 |
-| analysis_runs | id, source_id, start_seq, end_seq, state, snapshot_json, previous_candidate_states_json, error?, started_at, ended_at | 입력·미결·파일 버전을 고정; 성공 때만 분석 경계 이동 |
-| candidates | id, source_id, run_id, version, kind(story/spec/adr), operation, target_id, story_refs_json, status, payload_json, evidence_json, base_hashes_json, depends_on?, slack_thread_ts, slack_message_ts | 버튼에 id/version 결합; 실제 존재 대상·참조 검증 |
-| decisions | id, candidate_id, candidate_version, choice, actor_id, decided_at, result | UNIQUE(candidate_id, candidate_version); 결정 승자와 저장 결과는 별도 |
-| document_impacts | id, binding_id, story_id, story_hash, document_kind, status, candidate_id? | 기술 영향 추적; 거절해도 needs_review 유지 |
-| document_operations | id, binding_id, decision_id, state, file_plan_json, backup_dir, error?, updated_at | 파일별 이전/예정 해시·백업 위치·반영 결과; 재시작 복구 저널 |
-| reserved_ids | binding_id, document_kind, item_id, first_seen_at, retired_at? | 복합 PK, 삭제 후 재사용 금지 |
+| binding | id(workspace/channel), workspace, channel, folder | 채널당 폴더 하나, 같은 폴더를 다른 채널에 연결 금지 |
+| source | id, binding, thread, content, cursor, busy, followup, corrections | 채널 경로 하나(`…/channel`), 회의록은 내용 해시별 경로(`…/file/<sha256>`). cursor는 마지막 성공 분석 순번. busy/followup/corrections가 분석 실행 상태(별도 analysis_runs 없음) |
+| event | id(source:ts), source, seq, user, text, ts, thread | 같은 ts 중복 저장 금지, source 안에서 seq 증가 |
+| candidate | `records.CandidateRecord` 필드: id, binding, source, kind(story/spec/adr/conflict), target, status, payload, docs, plan, version, thread, message, story_hash, conflict, actor, decided_at | 버튼에 id/version 결합. 결정 결과(actor, decided_at)를 후보에 함께 저장(별도 decisions 없음) |
+| impact | id(binding:kind:story), binding, target, kind, status | 기술 문서 영향 추적. 거절해도 needs_review 유지 |
+| operation | id, binding, candidate, state, before, after, actor, time | 저장 작업 저널. before/after에 파일 전체 내용을 보관해 재시작 때 비교 |
+| reserved | id, binding, prefix(US/ADR), value | 삭제 후에도 ID 재사용 금지 |
 
-payload_json: Story의 Who/What/Why/인수조건 및 PRD 범위 패치, 또는 Spec/ADR 패치. 패치는 문서 종류·대상 항목 ID·기대 원문·제안문을 가지며 허용된 폴더/섹션만 편집한다. evidence_json은 source/event/file 근거 위치다. AI가 임의 경로나 실행 코드를 지정할 수 없다.
+payload: Story 후보는 `models.Candidate` 직렬화(action, target_id, story, evidence, question, spec_change, adr_change, why_evidence, answers_contradict). Spec 후보는 {content, delete}, ADR 후보는 {change, adr_id}. 전체 충돌 확인 후보(kind=conflict)는 payload가 비어 있고 conflict에 {requirement_ids, reason}을 둔다. AI가 임의 경로나 실행 코드를 지정할 수 없다.
 
 ## 상태와 불변식
-- 후보: clarifying / conflicted / pending / applying / applied / rejected / replaced / stale / apply_failed. 재분석 일시 잠금은 analysis_runs와 연결해 원래 상태 복원이 가능해야 한다.
-- 분석: queued / running / succeeded / failed. source별 active run 하나, 새 트리거는 followup_requested=true로 병합.
-- 영향: needs_review / applying / aligned / failed / recovery_required.
-- 저장 작업: prepared / writing / committed / rolled_back / recovery_required.
-- decisions의 approve는 사용자 의사이며 applied는 파일 저장 성공이다. 재시도는 동일 작업의 복구로 수행하고 새로운 승인처럼 중복 반영하지 않는다.
+- 후보(CandidateStatus): pending(승인 대기) / clarifying(보완·상충 답변 질문) / conflicted(요구사항 충돌 선택 대기) / applying / applied / rejected / replaced / stale / apply_failed. 활성 상태는 pending, clarifying, conflicted.
+- 승인·거절 버튼은 pending에서만, 충돌 선택 버튼은 conflicted에서만 유효하다. 버전이 다르면 아무것도 바꾸지 않는다.
+- 분석: source.busy가 실행 중 표시다. 실행 중 새 트리거는 followup=true로, 후보 정정은 corrections 큐로 합친다.
+- 영향: needs_review / aligned.
+- 저장 작업: prepared / committed / rolled_back / recovery_required.
+- applied는 파일 저장 성공이다. 재시도는 같은 작업의 복구로 수행하고 새 승인처럼 중복 반영하지 않는다.
 - Story/PRD 작업 성공 후에만 applied. Spec/ADR은 각각 별도 결정·작업이다.
-- 분석 실패 시 analyzed_seq 불변. 성공 시 고정한 end_seq까지만 이동. 이후 이벤트는 남긴다.
-- 관련 Story 변경 승인 시 기술 후보의 기준 story_hash를 재검증하고 오래된 후보를 차단한다.
+- 분석 실패 시 cursor 불변. 성공 시 고정한 end_seq까지만 이동. 이후 이벤트는 남긴다.
+- 관련 Story 변경 승인 시 기술 후보의 story_hash를 재검증하고 오래된 후보를 차단한다.
+- 충돌 선택 시 충돌한 Story가 문서에 없으면 stale로 끝내고 저장하지 않는다.
 
 ## 복구 저장
-사용자 네 문서 밖 내부 상태 폴더에 SQLite/입력 파일/작업별 원본 백업을 보관한다. 승인 직전과 저장 직전 파일 해시 검사, 같은 폴더 임시 파일 준비 후 파일별 교체를 수행한다. 여러 파일 동시 원자성은 보장하지 않는다.
-일부 실패는 백업 복구를 시도한다. 복구 전에도 외부 수정 여부를 확인해 새 수동 편집을 덮어쓰지 않는다. 확인이 불가능하면 recovery_required로 남기고 대상 파일을 안내한다. 재시작 시 미완료 작업은 실제 해시와 저널로 판별하며 자동 승인/무조건 재반영하지 않는다.
+사용자 네 문서 밖 내부 상태 폴더(`data/`)에 SQLite를 둔다. 회의록 내용은 source 레코드에, 변경 전후 파일 내용은 operation 저널에 보관한다(별도 백업 폴더 없음). 승인 직전과 저장 직전 파일 내용 비교, 같은 폴더 임시 파일 준비 후 파일별 교체를 수행한다. 여러 파일 동시 원자성은 보장하지 않는다.
+일부 실패는 저널의 이전 내용으로 복구를 시도한다. 복구 전에도 외부 수정 여부를 확인해 새 수동 편집을 덮어쓰지 않는다. 확인이 불가능하면 recovery_required로 남기고 대상 파일을 안내한다. 재시작 시 미완료 작업은 실제 파일 내용과 저널로 판별하며 자동 승인/무조건 재반영하지 않는다.
